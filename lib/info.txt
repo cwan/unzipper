@@ -1,0 +1,4 @@
+hmzip16.jar
+	http://www.ne.jp/asahi/hishidama/home/tech/soft/java/zip.html
+	Info-ZIP License
+		http://www.info-zip.org/license.html
