@@ -1,11 +1,14 @@
 import jp.hishidama.zip.*
 
-/** ZIPファイル名のエンコード（Windows日本語環境を想定） */
-ZIP_FILE_NAME_ENCODING = 'MS932'
-
-/** ZIPファイルパスワードのエンコード（Windows日本語環境を想定） */
-ZIP_FILE_PASSWORD_ENCODING = 'MS932'
-
+// 定数
+CONSTS = [
+	ENCODING : [
+		// ZIPファイル名のエンコード（Windows日本語環境を想定）
+		FILE_NAME : 'MS932',
+		// ZIPファイルパスワードのエンコード（Windows日本語環境を想定）
+		PASSWORD : 'MS932'
+	]
+]
 
 init()
 
@@ -47,21 +50,28 @@ void init() {
  */
 def unzip(password) {
 
-	def zipFile = new ZipFile(_sourceZipFile, ZIP_FILE_NAME_ENCODING)
+	def zipFile = new ZipFile(_sourceZipFile, CONSTS.ENCODING.FILE_NAME)
 
 	try {
 
 		// 解凍パスワード
 		if (!password.empty) {
-			zipFile.setPassword password.getBytes(ZIP_FILE_PASSWORD_ENCODING)
+			zipFile.password = password.getBytes(CONSTS.ENCODING.PASSWORD)
 		}
 
 		// CRCチェック
-		zipFile.setCheckCrc true
+		zipFile.checkCrc = true
 
 		zipFile.entries.each { zipEntry ->
 			def entryPath = zipEntry.name
 			println "entry: <$entryPath>"
+
+			// TODO
+			//zipEntry.inputStream.eachByte(8192) { b ->
+
+			//}
+			// File#appendが使えるか
+			//http://groovy.codehaus.org/groovy-jdk/java/io/File.html#append(java.io.InputStream)
 		}
 
 	} finally {
