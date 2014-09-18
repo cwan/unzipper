@@ -1,8 +1,8 @@
 import jp.hishidama.zip.*
 
 // 定数
-CONSTS = [
-	ENCODING : [
+C = [
+	ENC : [
 		// ZIPファイル名のエンコード（Windows日本語環境を想定）
 		FILE_NAME : 'MS932',
 		// ZIPファイルパスワードのエンコード（Windows日本語環境を想定）
@@ -12,7 +12,7 @@ CONSTS = [
 
 init()
 
-this.rules.each {
+this.expandedRules.each {
 	unzip it
 }
 
@@ -40,13 +40,15 @@ void init() {
 /** パスワードルールの展開 */
 void expandRules() {
 	
-	this.expandedRules = new HashSet()
+	this.expandedRules = new LinkedHashSet()
 
+	// 本日と前後の日付
 	def today = new Date()
 	def dates = [ today, today.plus(1), today.minus(1), today.minus(2), today.minus(3) ]
 	
 	def matcher = null
 
+	// ファイル名に4,6,8桁の数字が含まれる場合、日付とみなす
 	if ((matcher = (this.sourceZipFile.name =~ /.*(\d{8}).*/)).matches()) {
 		dates.add Date.parse('yyyyMMdd', matcher[0][1])
 	} else if ((matcher = (this.sourceZipFile.name =~ /.*(\d{6}).*/)).matches()) {
@@ -56,14 +58,14 @@ void expandRules() {
 	}
 
 	this.rules.each { rule ->
+		// ルール内に <～> が含まれる場合は、日付フォーマットとみなして置換する
 		def ruleMatcher = rule =~ /.*(<.+>).*/
 
 		if (ruleMatcher.matches()) {
-			def format = ruleMatcher[0][1].replaceFirst(/<(.+)>/, { it[1] })
-			println "format: $format"
+			def fmt = ruleMatcher[0][1].replaceFirst(/<(.+)>/, { it[1] })
 
 			dates.each { date ->
-				this.expandedRules.add rule.replaceFirst(/<.+>/, date.format(format))
+				this.expandedRules.add rule.replaceFirst(/<.+>/, date.format(fmt))
 			}
 		} else {
 			this.expandedRules.add rule
@@ -84,13 +86,13 @@ void expandRules() {
  */
 def unzip(password) {
 
-	def zipFile = new ZipFile(this.sourceZipFile, CONSTS.ENCODING.FILE_NAME)
+	def zipFile = new ZipFile(this.sourceZipFile, C.ENC.FILE_NAME)
 
 	try {
 
 		// 解凍パスワード
 		if (!password.empty) {
-			zipFile.password = password.getBytes(CONSTS.ENCODING.PASSWORD)
+			zipFile.password = password.getBytes(C.ENC.PASSWORD)
 		}
 
 		// CRCチェック
