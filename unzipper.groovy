@@ -12,7 +12,7 @@ CONSTS = [
 
 init()
 
-_rules.each {
+this.rules.each {
 	unzip it
 }
 
@@ -20,23 +20,23 @@ _rules.each {
  * 初期処理
  */
 void init() {
-	_sourceZipFile = new File(args[0])
-	_ruleFile = new File(args[1])
+	this.sourceZipFile = new File(args[0])
+	this.ruleFile = new File(args[1])
 
-	println "Zip file: <${_sourceZipFile.absolutePath}>"
-	println "Rule file: <${_ruleFile.absolutePath}>"
+	println "Zip file: <${this.sourceZipFile.absolutePath}>"
+	println "Rule file: <${this.ruleFile.absolutePath}>"
 
-	if (!_sourceZipFile.exists() || !_sourceZipFile.file) {
-		println "File does not exist: <${_sourceZipFile.absolutePath}>"
+	if (!this.sourceZipFile.exists() || !this.sourceZipFile.file) {
+		println "File does not exist: <${this.sourceZipFile.absolutePath}>"
 		System.exit 1
 	}
 
-	_rules = (_ruleFile.exists() && _ruleFile.file) ?
-				_ruleFile.readLines() : []
+	this.rules = (this.ruleFile.exists() && this.ruleFile.file) ?
+				this.ruleFile.readLines() : []
 
-	println "Rules: ${_rules}"
+	println "Rules: ${this.rules}"
 
-	_rules.push ''
+	this.rules.push ''
 }
 
 /**
@@ -50,7 +50,7 @@ void init() {
  */
 def unzip(password) {
 
-	def zipFile = new ZipFile(_sourceZipFile, CONSTS.ENCODING.FILE_NAME)
+	def zipFile = new ZipFile(this.sourceZipFile, CONSTS.ENCODING.FILE_NAME)
 
 	try {
 
