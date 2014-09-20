@@ -12,20 +12,23 @@ C = [
 
 init()
 
+makeDestDir()
+println "destDir : ${this.destDir.absolutePath}"
+
 this.expandedRules.each {
 	unzip it
 }
 
 /** 初期処理 */
 void init() {
-	this.sourceZipFile = new File(args[0])
+	this.srcZipFile = new File(args[0])
 	this.ruleFile = new File(args[1])
 
-	println "Zip file: <${this.sourceZipFile.absolutePath}>"
+	println "Zip file: <${this.srcZipFile.absolutePath}>"
 	println "Rule file: <${this.ruleFile.absolutePath}>"
 
-	assert (this.sourceZipFile.exists() && this.sourceZipFile.file),
-			"File does not exist: <${this.sourceZipFile.absolutePath}>"
+	assert (this.srcZipFile.exists() && this.srcZipFile.file),
+			"File does not exist: <${this.srcZipFile.absolutePath}>"
 
 	this.rules = (this.ruleFile.exists() && this.ruleFile.file) ?
 				this.ruleFile.readLines() : []
@@ -35,6 +38,36 @@ void init() {
 	this.rules.push ''
 
 	expandRules()
+}
+
+/** 展開先のディレクトリを作成する */
+void makeDestDir() {
+
+	def parentDir = this.srcZipFile.absoluteFile.parentFile
+	def baseName = this.srcZipFile.name.replaceFirst(~/\.[^\.]*$/, '')
+
+	// zipファイルのベース名と同じディレクトリを作成する
+	this.destDir = new File(parentDir, baseName)
+
+	if (!this.destDir.directory) {
+		this.destDir.mkdir()
+		return
+	}
+
+	this.destDir = null
+
+	// 既存のディレクトリがある場合は、サフィックス付きのディレクトリを作成する
+	(1..10).find {
+		def dir = new File(parentDir, baseName + " (${it})")
+
+		if (!dir.directory) {
+			dir.mkdir()
+			this.destDir = dir
+			return true
+		}
+	}
+
+	assert this.destDir != null, 'Cound not make a destination directory.'
 }
 
 /** パスワードルールの展開 */
@@ -47,7 +80,7 @@ void expandRules() {
 	def dates = [ today, today.plus(1), today.minus(1), today.minus(2), today.minus(3) ]
 	
 	// ファイル名に4,6,8桁の数字が含まれる場合、日付とみなす
-	def matcher = this.sourceZipFile.name =~ /.*?(\d{8}|\d{6}|\d{4}).*?/
+	def matcher = this.srcZipFile.name =~ /.*?(\d{8}|\d{6}|\d{4}).*?/
 
 	if (matcher.matches()) {
 		def sDate = matcher[0][1]
@@ -99,7 +132,7 @@ void expandRules() {
  */
 def unzip(password) {
 
-	def zipFile = new ZipFile(this.sourceZipFile, C.ENC.FILE_NAME)
+	def zipFile = new ZipFile(this.srcZipFile, C.ENC.FILE_NAME)
 
 	try {
 
@@ -113,7 +146,7 @@ def unzip(password) {
 
 		zipFile.entries.each { zipEntry ->
 			def entryPath = zipEntry.name
-			println "entry: <$entryPath>"
+			//println "entry: <$entryPath>"
 
 			// TODO
 			//zipEntry.inputStream.eachByte(8192) { b ->
