@@ -46,15 +46,28 @@ void expandRules() {
 	def today = new Date()
 	def dates = [ today, today.plus(1), today.minus(1), today.minus(2), today.minus(3) ]
 	
-	def matcher = null
-
 	// ファイル名に4,6,8桁の数字が含まれる場合、日付とみなす
-	if ((matcher = (this.sourceZipFile.name =~ /.*(\d{8}).*/)).matches()) {
-		dates.add Date.parse('yyyyMMdd', matcher[0][1])
-	} else if ((matcher = (this.sourceZipFile.name =~ /.*(\d{6}).*/)).matches()) {
-		dates.add Date.parse('yyMMdd', matcher[0][1])
-	} else if ((matcher = (this.sourceZipFile.name =~ /.*(\d{4}).*/)).matches()) {
-		dates.add Date.parse('yyyyMMdd', new Date().format('yyyy') + matcher[0][1])
+	def matcher = this.sourceZipFile.name =~ /.*?(\d{8}|\d{6}|\d{4}).*?/
+
+	if (matcher.matches()) {
+		def sDate = matcher[0][1]
+		def targetDate = null
+
+		if (sDate.length() == 8) {
+			targetDate = Date.parse('yyyyMMdd', sDate)
+		} else if (sDate.length() == 6) {
+			targetDate = Date.parse('yyMMdd', sDate)
+		} else if (sDate.length() == 4) {
+			targetDate = Date.parse('MMdd', sDate)
+			targetDate.set(year: new Date()[Calendar.YEAR])
+		}
+
+		if (targetDate != null) {
+			dates.add targetDate
+			dates.add targetDate.plus(1)
+			dates.add targetDate.plus(2)
+			dates.add targetDate.plus(3)
+		}
 	}
 
 	this.rules.each { rule ->
@@ -100,7 +113,7 @@ def unzip(password) {
 
 		zipFile.entries.each { zipEntry ->
 			def entryPath = zipEntry.name
-			//println "entry: <$entryPath>"
+			println "entry: <$entryPath>"
 
 			// TODO
 			//zipEntry.inputStream.eachByte(8192) { b ->
