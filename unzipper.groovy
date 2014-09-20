@@ -17,10 +17,21 @@ println "destDir : ${this.destDir.absolutePath}"
 
 this.completed = false
 
-this.expandedRules.find {
-	unzip it
+this.expandedRules.find { password ->
+	try {
+		unzip password
+		println "Succeed in unzipping: password=${password}"
+	} catch (e) {
+		println "Failed in unzipping: password=${password}, message=${e.message}"
+	}
 
+	// 解凍が成功するまで繰り返す
 	return this.completed
+}
+
+if (!this.completed) {
+	// 全て失敗した場合、解凍先ディレクトリを削除
+	this.destDir.deleteDir()
 }
 
 /** 初期処理 */
@@ -54,7 +65,7 @@ void makeDestDir() {
 	// zipファイルのベース名と同じディレクトリを作成する
 	this.destDir = new File(parentDir, this.baseName)
 
-	if (!this.destDir.directory) {
+	if (!this.destDir.exists() && !this.destDir.directory) {
 		this.destDir.mkdir()
 		return
 	}
@@ -65,7 +76,7 @@ void makeDestDir() {
 	(1..10).find {
 		def dir = new File(parentDir, this.baseName + " (${it})")
 
-		if (!dir.directory) {
+		if (!dir.exists() && !dir.directory) {
 			dir.mkdir()
 			this.destDir = dir
 			return true
