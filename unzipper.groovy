@@ -134,7 +134,7 @@ void expandRules() {
 		}
 	}
 
-	println "expandedRules : ${this.expandedRules}"
+//	println "expandedRules : ${this.expandedRules}"
 }
 
 /**
@@ -207,13 +207,6 @@ def unzip(password) {
 			} finally {
 				if (inStream != null) inStream.close()
 			}
-
-			// TODO
-			//zipEntry.inputStream.eachByte(8192) { b ->
-
-			//}
-			// File#appendが使えるか
-			//http://groovy.codehaus.org/groovy-jdk/java/io/File.html#append(java.io.InputStream)
 		}
 
 		this.completed = true
