@@ -15,8 +15,12 @@ init()
 makeDestDir()
 println "destDir : ${this.destDir.absolutePath}"
 
-this.expandedRules.each {
+this.completed = false
+
+this.expandedRules.find {
 	unzip it
+
+	return this.completed
 }
 
 /** 初期処理 */
@@ -27,15 +31,16 @@ void init() {
 	println "Zip file: <${this.srcZipFile.absolutePath}>"
 	println "Rule file: <${this.ruleFile.absolutePath}>"
 
-	assert (this.srcZipFile.exists() && this.srcZipFile.file),
-			"File does not exist: <${this.srcZipFile.absolutePath}>"
+	assert this.srcZipFile.file, "File does not exist: <${this.srcZipFile.absolutePath}>"
 
-	this.rules = (this.ruleFile.exists() && this.ruleFile.file) ?
-				this.ruleFile.readLines() : []
+	this.rules = [ '' ]	// パスワード無し用のルール
 
-	println "Rules: ${this.rules}"
+	// ルールファイル読み込み
+	if (this.ruleFile.file) {
+		this.rules.addAll this.ruleFile.readLines()
+	}
 
-	this.rules.push ''
+//	println "Rules: ${this.rules}"
 
 	expandRules()
 }
@@ -44,10 +49,10 @@ void init() {
 void makeDestDir() {
 
 	def parentDir = this.srcZipFile.absoluteFile.parentFile
-	def baseName = this.srcZipFile.name.replaceFirst(~/\.[^\.]*$/, '')
+	this.baseName = this.srcZipFile.name.replaceFirst(~/\.[^\.]*$/, '')
 
 	// zipファイルのベース名と同じディレクトリを作成する
-	this.destDir = new File(parentDir, baseName)
+	this.destDir = new File(parentDir, this.baseName)
 
 	if (!this.destDir.directory) {
 		this.destDir.mkdir()
@@ -58,7 +63,7 @@ void makeDestDir() {
 
 	// 既存のディレクトリがある場合は、サフィックス付きのディレクトリを作成する
 	(1..10).find {
-		def dir = new File(parentDir, baseName + " (${it})")
+		def dir = new File(parentDir, this.baseName + " (${it})")
 
 		if (!dir.directory) {
 			dir.mkdir()
@@ -144,9 +149,53 @@ def unzip(password) {
 		// CRCチェック
 		zipFile.checkCrc = true
 
-		zipFile.entries.each { zipEntry ->
-			def entryPath = zipEntry.name
-			//println "entry: <$entryPath>"
+		// 最上位ディレクトリを作るかどうかチェック
+		def needsTopDir = false
+
+		zipFile.entries.find { e ->
+			if (this.baseName != e.name.split('/')[0]) {
+				needsTopDir = true
+				return true
+			}
+		}
+
+//		println "needsTopDir: $needsTopDir"
+
+		// 展開処理
+		zipFile.entries.each { e ->
+			def path = e.name
+
+			if (!needsTopDir) {
+				path = path.substring(this.baseName.length() + 1)
+			}
+
+//			println "entryPath: <$path>"
+
+			if (e.directory) {
+				// ディレクトリエントリの場合
+				if (!path.empty) new File(this.destDir, path).mkdirs()
+				return
+			}
+
+			// ファイルエントリの場合
+			def names = path.split('/')
+			def fileName = names[names.size() - 1]
+//			println "fileName: ${fileName}"
+
+			if (names.size() > 1) {
+				def dirName = names.take(names.size() - 1).join('/')
+//				println "dirName: ${dirName}"
+				new File(this.destDir, dirName).mkdirs()
+			}
+
+			def inStream = zipFile.getInputStream(e)
+
+			try {
+				def file = new File(this.destDir, path)
+				file.append inStream
+			} finally {
+				if (inStream != null) inStream.close()
+			}
 
 			// TODO
 			//zipEntry.inputStream.eachByte(8192) { b ->
@@ -155,6 +204,8 @@ def unzip(password) {
 			// File#appendが使えるか
 			//http://groovy.codehaus.org/groovy-jdk/java/io/File.html#append(java.io.InputStream)
 		}
+
+		this.completed = true
 
 	} finally {
 		zipFile.close()
