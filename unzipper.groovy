@@ -1,4 +1,5 @@
 import jp.hishidama.zip.*
+import javax.swing.JOptionPane
 
 // 定数
 C = [
@@ -21,6 +22,8 @@ this.expandedRules.find { password ->
 	try {
 		unzip password
 		println "Succeed in unzipping: password=${password}"
+		JOptionPane.showMessageDialog null, "Succeed in unzipping: password=${password}"
+		
 	} catch (e) {
 		println "Failed in unzipping: password=${password}, message=${e.message}"
 	}
@@ -32,6 +35,7 @@ this.expandedRules.find { password ->
 if (!this.completed) {
 	// 全て失敗した場合、解凍先ディレクトリを削除
 	this.destDir.deleteDir()
+	JOptionPane.showMessageDialog null, "Could not unzip a file."
 }
 
 /** 初期処理 */
