@@ -50,6 +50,9 @@ void init() {
 
 	this.rules = [ '' ]	// パスワード無し用のルール
 
+    // クリップボード
+    this.rules << getClipboardString() ?: ''
+
 	// ルールファイル読み込み
 	if (this.ruleFile.file) {
 		this.rules.addAll this.ruleFile.readLines()
@@ -218,4 +221,15 @@ def unzip(password) {
 	} finally {
 		zipFile.close()
 	}
+}
+
+
+// クリップボードの文字列を取得する
+def getClipboardString() {
+  try {
+    return java.awt.Toolkit.getDefaultToolkit().getSystemClipboard()
+             .getData(java.awt.datatransfer.DataFlavor.stringFlavor)
+  } catch (Exception e) {
+    return null
+  }
 }
